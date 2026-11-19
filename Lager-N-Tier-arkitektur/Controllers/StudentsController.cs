@@ -1,98 +1,80 @@
+using Lager_N_Tier_arkitektur.Dtos;
+using Lager_N_Tier_arkitektur.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Lager_N_Tier_arkitektur.Models;
 
-[Route("api/[controller]")]
-[ApiController]
-public class StudentsController : ControllerBase
+namespace Lager_N_Tier_arkitektur.Controllers
 {
-    private readonly Lager_N_Tier_arkitekturContext _context;
-    public StudentsController(Lager_N_Tier_arkitekturContext context)
+    // =================================================================
+    //  PRESENTATION LAYER (Presentationslager)  -  CONTROLLER
+    // -----------------------------------------------------------------
+    //  Only job: HTTP in -> call the Business layer -> HTTP out.
+    //  No DbContext, no EF Core, no business rules here.
+    //  It only knows IStudentService and the DTOs.
+    // =================================================================
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StudentsController : ControllerBase
     {
-        _context = context;
-    }
+        private readonly IStudentService _service;
 
-    // GET: api/Students
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Students>>> GetStudents()
-    {
-        return await _context.Students.ToListAsync();
-    }
-
-    // GET: api/Students/5
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Students>> GetStudents(int id)
-    {
-        var students = await _context.Students.FindAsync(id);
-
-        if (students == null)
+        public StudentsController(IStudentService service)
         {
-            return NotFound();
+            _service = service;
         }
 
-        return students;
-    }
-
-    // PUT: api/Students/5
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-    [HttpPut("{id}")]
-    public async Task<IActionResult> PutStudents(int? id, Students students)
-    {
-        if (id != students.Id)
+        // GET: api/Students
+        // Flow: Controller -> StudentService -> StudentRepository -> DbContext -> SQL Server
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<StudentDto>>> GetStudents()
         {
-            return BadRequest();
+            return Ok(await _service.GetAllAsync());
         }
 
-        _context.Entry(students).State = EntityState.Modified;
-
-        try
+        // GET: api/Students/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<StudentDto>> GetStudent(int id)
         {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!StudentsExists(id))
+            var student = await _service.GetByIdAsync(id);
+            if (student == null)
             {
                 return NotFound();
             }
-            else
-            {
-                throw;
-            }
+
+            return Ok(student);
         }
 
-        return NoContent();
-    }
-
-    // POST: api/Students
-    // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-    [HttpPost]
-    public async Task<ActionResult<Students>> PostStudents(Students students)
-    {
-        _context.Students.Add(students);
-        await _context.SaveChangesAsync();
-
-        return CreatedAtAction("GetStudents", new { id = students.Id }, students);
-    }
-
-    // DELETE: api/Students/5
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteStudents(int? id)
-    {
-        var students = await _context.Students.FindAsync(id);
-        if (students == null)
+        // PUT: api/Students/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutStudent(int id, SaveStudentDto dto)
         {
-            return NotFound();
+            var updated = await _service.UpdateAsync(id, dto);
+            if (!updated)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
         }
 
-        _context.Students.Remove(students);
-        await _context.SaveChangesAsync();
+        // POST: api/Students
+        [HttpPost]
+        public async Task<ActionResult<StudentDto>> PostStudent(SaveStudentDto dto)
+        {
+            var created = await _service.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetStudent), new { id = created.Id }, created);
+        }
 
-        return NoContent();
-    }
+        // DELETE: api/Students/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteStudent(int id)
+        {
+            var deleted = await _service.DeleteAsync(id);
+            if (!deleted)
+            {
+                return NotFound();
+            }
 
-    private bool StudentsExists(int? id)
-    {
-        return _context.Students.Any(e => e.Id == id);
+            return NoContent();
+        }
     }
 }

@@ -1,6 +1,38 @@
-@Lager_N_Tier_arkitektur_HostAddress = http://localhost:5019
+@host = http://localhost:5019
 
-GET {{Lager_N_Tier_arkitektur_HostAddress}}/weatherforecast/
+### Get all students
+GET {{host}}/api/Students
 Accept: application/json
 
-###
+### Get one student
+GET {{host}}/api/Students/1
+
+### Create a student -> 201
+POST {{host}}/api/Students
+Content-Type: application/json
+
+{
+  "name": "Anna Andersson",
+  "age": 22
+}
+
+### Business rule broken -> 400 (from ExceptionHandlingMiddleware)
+POST {{host}}/api/Students
+Content-Type: application/json
+
+{
+  "name": "",
+  "age": 5
+}
+
+### Update -> 204
+PUT {{host}}/api/Students/1
+Content-Type: application/json
+
+{
+  "name": "Anna Berg",
+  "age": 23
+}
+
+### Delete -> 204
+DELETE {{host}}/api/Students/1
