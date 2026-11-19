@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 
 namespace Lager_N_Tier_arkitektur
 {
@@ -6,6 +7,9 @@ namespace Lager_N_Tier_arkitektur
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var connectionString = builder.Configuration.GetConnectionString("Lager_N_Tier_arkitekturContext") ?? throw new InvalidOperationException("Connection string 'Lager_N_Tier_arkitekturContext' not found.");
+
+            builder.Services.AddDbContext<Lager_N_Tier_arkitekturContext>(options => options.UseSqlServer(connectionString));
 
             // Add services to the container.
 
